@@ -1,0 +1,40 @@
+"""
+Backend requirements.txt
+Install with: pip install -r requirements.txt
+"""
+
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+pydantic==2.5.0
+
+# Async Support
+asyncio==3.4.3
+
+# Data Processing & ML
+numpy==1.24.3
+torch==2.0.1
+torchvision==0.15.2
+
+# OCR Dependencies
+paddleocr==2.7.0.3
+paddlepaddle-gpu==2.5.1
+opencv-python==4.8.1.78
+fitz==0.0.1.dev2
+PyMuPDF==1.23.8
+
+# RAG Dependencies
+faiss-cpu==1.7.4
+langchain==0.1.0
+sentence-transformers==2.2.2
+
+# Utilities
+tqdm==4.66.1
+python-dotenv==1.0.0
+requests==2.31.0
+
+# Development (optional)
+pytest==7.4.3
+black==23.12.0
+flake8==6.1.0
