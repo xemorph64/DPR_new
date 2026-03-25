@@ -12,6 +12,14 @@ class DynamicInsight(BaseModel):
     topic: str = Field(..., description="The focus area of this insight")
     details: str = Field(..., description="Detailed narrative about this topic")
     risks: List[str] = Field(default_factory=list, description="Any risks associated with this topic")
+    extracted_values: Dict[str, str] = Field(default_factory=dict, description="Key extracted numerical values and costs")
+
+
+class EvaluationSummary(BaseModel):
+    """Schema for final AI assessment report card."""
+    flagged_risks: List[str] = Field(default_factory=list, description="High-severity risks aggregated from the document.")
+    missing_sections: List[str] = Field(default_factory=list, description="Critical blind spots or missing data.")
+    recommendations: List[str] = Field(default_factory=list, description="Actionable recommendations for the assessor.")
 
 
 class AnalysisReport(BaseModel):
@@ -23,6 +31,7 @@ class AnalysisReport(BaseModel):
     # Flexible Overview Fields
     executive_summary: str = Field(default="", description="High-level narrative overview of the entire DPR")
     insights: List[DynamicInsight] = Field(default_factory=list, description="Key insights generated dynamically")
+    evaluation_summary: Optional[EvaluationSummary] = Field(default=None, description="Final AI Assessment Report Card")
     extracted_images: List[Dict[str, str]] = Field(default_factory=list, description="List of relevant images extracted")
     
     error_message: Optional[str] = Field(default=None, description="Error details if status is FAILED")
