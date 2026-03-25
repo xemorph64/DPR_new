@@ -20,11 +20,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.schemas import UploadResponse, StatusResponse, AnalysisReport
+from backend.config import settings
 from backend.services import (
     process_dpr_file,
     get_job_status,
-    initialize_ocr,
-    initialize_rag,
 )
 
 # ============================================================================
@@ -32,26 +31,18 @@ from backend.services import (
 # ============================================================================
 
 app = FastAPI(
-    title="DPR Compliance Analysis API",
-    description="Backend API for analyzing government DPR documents via OCR + RAG",
-    version="1.0.0"
+    title=settings.APP_NAME,
+    description="Backend API for analyzing government DPR documents via Cloud OCR + RAG",
+    version=settings.VERSION
 )
 
 # ============================================================================
 # CORS Configuration
 # ============================================================================
 
-# Allow React Frontend to access the API
-ALLOWED_ORIGINS = [
-    "http://localhost:3000",       # Local development
-    "http://localhost:5173",       # Vite default port
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5173",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     expose_headers=["*"],
@@ -59,14 +50,10 @@ app.add_middleware(
 )
 
 # ============================================================================
-# Configuration
+# Configuration (From Config)
 # ============================================================================
 
-# Get root directory (parent of backend/)
-ROOT_DIR = Path(__file__).parent.parent
-UPLOADS_DIR = ROOT_DIR / "uploads"
-
-# Ensure uploads directory exists
+UPLOADS_DIR = Path(settings.UPLOADS_DIR)
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 # ============================================================================
@@ -76,35 +63,14 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 @app.on_event("startup")
 async def startup_event():
     """
-    Initialize ML models on application startup.
-    This ensures models are loaded into VRAM before the first request.
+    Initialize system requirements on application startup.
+    With Cloud Providers, no heavy ML models need to be loaded into VRAM locally.
     """
-    import asyncio
-    
     print("\n" + "=" * 70)
-    print("[STARTUP] DPR Backend Startup - Initializing ML Models")
+    print(f"[STARTUP] {settings.APP_NAME} Startup")
     print("=" * 70 + "\n")
-    
-    try:
-        # Initialize OCR Pipeline
-        print("[1/2] Loading OCR Pipeline (PaddleOCR + PyMuPDF)...")
-        initialize_ocr()
-        print("      [OK] OCR Pipeline ready\n")
-        
-        # Initialize RAG Components (defer to thread pool to avoid blocking)
-        print("[2/2] Loading RAG Components (Embeddings + FAISS)...")
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, initialize_rag)
-        print("      [OK] RAG Components ready\n")
-        
-        print("=" * 70)
-        print("[OK] All models initialized successfully!")
-        print("=" * 70 + "\n")
-        
-    except Exception as e:
-        print(f"\n[ERROR] STARTUP FAILED: {e}")
-        print("Note: Ensure PaddleOCR and FAISS indices are properly installed")
-        raise
+    print("[OK] Cloud API modes enabled. Setup completed successfully!")
+    print("=" * 70 + "\n")
 
 
 @app.on_event("shutdown")
@@ -112,7 +78,7 @@ async def shutdown_event():
     """
     Cleanup on shutdown.
     """
-    print("\n[SHUTDOWN] DPR Backend shutting down...")
+    print(f"\n[SHUTDOWN] {settings.APP_NAME} shutting down...")
 
 
 # ============================================================================
