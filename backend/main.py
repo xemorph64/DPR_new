@@ -19,11 +19,12 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend.schemas import UploadResponse, StatusResponse, AnalysisReport
+from backend.schemas import UploadResponse, StatusResponse, AnalysisReport, ChatRequest, ChatResponse
 from backend.config import settings
 from backend.services import (
     process_dpr_file,
     get_job_status,
+    ask_chatbot
 )
 
 # ============================================================================
@@ -240,8 +241,23 @@ async def get_report(job_id: str):
     return report
 
 
-# ============================================================================
-# Root Endpoint
+# ============================================================================# Chatbot Endpoint
+# ============================================================================  
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat_with_document(request: ChatRequest):
+    """
+    RAG-powered Chatbot endpoint. Answers questions based on the uploaded document.
+    """
+    try:
+        answer = ask_chatbot(request.job_id, request.query)
+        if not answer:
+            raise HTTPException(status_code=404, detail="Document context not found or indexing incomplete.")
+        return ChatResponse(answer=answer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================  # Root Endpoint
 # ============================================================================
 
 @app.get("/")

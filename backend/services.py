@@ -25,13 +25,6 @@ logger = logging.getLogger(__name__)
 # Local Memory Store to bypass Redis for testing
 JOB_STORE = {}
 
-# Cloud Clients Initialization
-try:
-    qdrant = QdrantClient(path=settings.QDRANT_LOCAL_PATH)
-except Exception as e:
-    logger.warning(f"Failed to initialize cloud clients: {e}")
-    qdrant = None
-
 def process_dpr_task(job_id: str, pdf_path: str):
     """
     Background Task executed directly.
@@ -85,3 +78,40 @@ def get_job_status(job_id: str) -> Optional[AnalysisReport]:
     if data:
         return AnalysisReport.model_validate_json(data)
     return None
+
+def ask_chatbot(job_id: str, query: str) -> Optional[str]:
+    """
+    Queries the RAG database for a specific job_id and uses the LLM to answer the user's question.
+    """
+    from groq import Groq
+    
+    # 1. Retrieve Context from Qdrant
+    rag_chunks = document_rag.query_document(job_id, query=query, limit=5)
+    if not rag_chunks:
+        return "I could not find any relevant information in the document to answer your question."
+        
+    context_text = "\n\n".join([f"Excerpt {i+1}:\n{chunk.get('text', '')}" for i, chunk in enumerate(rag_chunks)])
+    
+    # 2. Ask Groq
+    client = Groq(api_key=settings.GROQ_API_KEY)
+    
+    system_prompt = (
+        "You are an AI assistant reviewing a Detailed Project Report (DPR). "
+        "Answer the user's question based ONLY on the provided excerpts from the document. "
+        "If the answer is not contained in the excerpts, say 'I don't have enough information from the document to answer that.'\n\n"
+        f"Document Excerpts:\n{context_text}"
+    )
+    
+    try:
+        response = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": query}
+            ],
+            model=settings.GROQ_MODEL_NAME,
+            temperature=0.3
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error(f"Chatbot Error: {e}")
+        return f"An error occurred while generating the response: {str(e)}"

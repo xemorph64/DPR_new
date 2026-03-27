@@ -105,10 +105,15 @@ export const AnalysisDashboard: React.FC = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 2 }}>
-        <AnalyticsIcon sx={{ fontSize: 40, color: '#0f2c59' }} />
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#0f2c59' }}>
-          DPR Analysis Dashboard
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <AnalyticsIcon sx={{ fontSize: 40, color: '#0f2c59' }} />
+          <Typography variant="h4" sx={{ fontWeight: 700, color: '#0f2c59' }}>
+            DPR Analysis Dashboard
+          </Typography>
+        </Box>
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+          Upload and evaluate Detailed Project Reports through automated assessment
         </Typography>
       </Box>
 

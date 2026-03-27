@@ -4,7 +4,7 @@ import { Box, Container, Typography, Link, Stack, Divider } from '@mui/material'
 const GovFooter: React.FC = () => {
   return (
     <Box component="footer" sx={{ bgcolor: '#0b1e3c', color: '#fff', paddingTop: 6, paddingBottom: 2, borderTop: '4px solid #ff9933' }}>
-      <Container maxWidth="xl">
+      <Box sx={{ px: { xs: 2, md: 3 }, width: '100%', boxSizing: 'border-box' }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 4, mb: 4 }}>
           {/* Column 1: Ministry Info */}
           <Box sx={{ flex: '1 1 300px' }}>
@@ -78,7 +78,7 @@ const GovFooter: React.FC = () => {
             />
           </Box>
         </Box>
-      </Container>
+      </Box>
     </Box>
   );
 };

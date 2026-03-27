@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -40,29 +40,61 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 const GeospatialVerification: React.FC = () => {
-    // Focus on a specific region (e.g., Assam/Northeast context)
-    const center: [number, number] = [26.1445, 91.7362]; // Guwahati, Assam context
+    // Focus on a specific region
+    const [center, setCenter] = useState<[number, number]>([26.1445, 91.7362]);
+    const [placeName, setPlaceName] = useState<string>("Guwahati, Assam");
+    const [projectSite, setProjectSite] = useState<[number, number][]>([
+        [26.1480, 91.7350], [26.1550, 91.7450], [26.1500, 91.7500], [26.1400, 91.7400]
+    ]);
+    const [forestZone, setForestZone] = useState<[number, number][]>([
+        [26.1500, 91.7400], [26.1600, 91.7500], [26.1550, 91.7600], [26.1450, 91.7500]
+    ]);
+
+    useEffect(() => {
+        const fetchLocation = async () => {
+            const jobId = localStorage.getItem('dpr_job_id');
+            if (!jobId) return;
+            try {
+                const response = await fetch('http://localhost:8000/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        job_id: jobId,
+                        query: "Extract the primary geographical coordinates of the main project site from the document. Respond ONLY with a raw JSON object and absolutely no other text. Format: {\"lat\": number, \"long\": number, \"place_name\": \"string\"}. If no exact coordinates exist, find the primary city or region mentioned and return its approximate coordinates. Do not use markdown blocks."
+                    })
+                });
+                const data = await response.json();
+                let jsonStr = data.answer.replace(/```json/g, '').replace(/```/g, '').trim();
+                const loc = JSON.parse(jsonStr);
+                if (loc && loc.lat && loc.long) {
+                    setCenter([loc.lat, loc.long]);
+                    setPlaceName(loc.place_name || "Project Site");
+                    
+                    // Slightly offset project site polygon based on new center
+                    setProjectSite([
+                        [loc.lat + 0.0035, loc.long - 0.0012],
+                        [loc.lat + 0.0105, loc.long + 0.0088],
+                        [loc.lat + 0.0055, loc.long + 0.0138],
+                        [loc.lat - 0.0045, loc.long + 0.0038]
+                    ]);
+                    
+                    setForestZone([
+                        [loc.lat + 0.0055, loc.long + 0.0038],
+                        [loc.lat + 0.0155, loc.long + 0.0138],
+                        [loc.lat + 0.0105, loc.long + 0.0238],
+                        [loc.lat + 0.0005, loc.long + 0.0138]
+                    ]);
+                }
+            } catch (err) {
+                console.error("Error fetching location", err);
+            }
+        };
+        fetchLocation();
+    }, []);
 
     // State for Simulation
     const [analyzing, setAnalyzing] = useState(false);
     const [analysisComplete, setAnalysisComplete] = useState(false);
-
-    // Mock Data for Zones
-    // 1. Restricted Forest Area (Red)
-    const forestZone: [number, number][] = [
-        [26.1500, 91.7400],
-        [26.1600, 91.7500],
-        [26.1550, 91.7600],
-        [26.1450, 91.7500]
-    ];
-
-    // 2. Proposed Project Site (Blue) - Partially overlapping
-    const projectSite: [number, number][] = [
-        [26.1480, 91.7350],
-        [26.1550, 91.7450], // Overlap here
-        [26.1500, 91.7500],
-        [26.1400, 91.7400]
-    ];
 
     const runAnalysis = () => {
         setAnalyzing(true);
@@ -100,7 +132,7 @@ const GeospatialVerification: React.FC = () => {
             <Box sx={{ display: 'flex', flex: 1, gap: 2, height: '100%', flexDirection: { xs: 'column', md: 'row' } }}>
                 {/* Left Pane: Interactive Map */}
                 <Box sx={{ flex: 3, borderRadius: 2, overflow: 'hidden', border: '1px solid #e0e0e0', minHeight: 400, position: 'relative', boxShadow: 3 }}>
-                    <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
+                        <MapContainer key={`${center[0]}-${center[1]}`} center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
                         <LayersControl position="topright">
                             {/* Base Layers */}
                             <LayersControl.BaseLayer checked name="OpenStreetMap">
@@ -137,9 +169,9 @@ const GeospatialVerification: React.FC = () => {
                         </LayersControl>
 
                         {/* Project Marker */}
-                        <Marker position={[26.1480, 91.7350]}>
+                        <Marker position={center}>
                             <Popup>
-                                <b>Project Entry Point</b><br />Site A-12
+                                <b>Project Entry Point</b><br />{placeName}       
                             </Popup>
                         </Marker>
                     </MapContainer>

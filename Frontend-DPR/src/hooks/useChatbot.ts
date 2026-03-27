@@ -35,28 +35,58 @@ export const useChatbot = (): UseChatbotReturn => {
     setInput(e.target.value);
   };
 
-  const sendMessage = () => {
+const sendMessage = async () => {
     if (input.trim() === '') return;
-    
+
+    const currentText = input;
     const newMessage: ChatMessage = {
       id: messages.length + 1,
-      text: input,
+      text: currentText,
       sender: 'user',
     };
-    
+
     setMessages(prevMessages => [...prevMessages, newMessage]);
     setInput('');
-    
-    // TODO: Add bot response logic here
-    // For now, this is just a placeholder
-    setTimeout(() => {
+
+    try {
+      const storedJobId = localStorage.getItem('dpr_job_id');
+      
+      if (!storedJobId) {
+          throw new Error("No document uploaded yet. Please upload a DPR first.");
+      }
+
+      const response = await fetch('http://localhost:8000/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          job_id: storedJobId,
+          query: currentText
+        })
+      });
+
+      if (!response.ok) {
+         throw new Error(`Server responded with ${response.status}`);
+      }
+
+      const data = await response.json();
+      
       const botResponse: ChatMessage = {
         id: messages.length + 2,
-        text: 'Thank you for your message. This is an automated response.',
+        text: data.answer || "I could not find an answer.",
         sender: 'bot',
       };
       setMessages(prevMessages => [...prevMessages, botResponse]);
-    }, 500);
+
+    } catch (error: any) {
+      const errorResponse: ChatMessage = {
+        id: messages.length + 2,
+        text: "Error connecting to AI: " + error.message,
+        sender: 'bot',
+      };
+      setMessages(prevMessages => [...prevMessages, errorResponse]);
+    }
   };
 
   return {
