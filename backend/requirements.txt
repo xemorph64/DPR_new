@@ -1,26 +1,26 @@
 
 # Web Framework
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-python-multipart==0.0.6
-pydantic==2.5.0
-pydantic-settings==2.1.0
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+pydantic-settings
 
 # Tasks & Queues
-celery==5.3.6
-redis==5.0.1
+celery
+redis
 
 # Data Processing
-PyMuPDF==1.23.8
+PyMuPDF
 
 # Cloud/API Dependencies
-google-generativeai==0.5.2
-qdrant-client==1.7.0
-boto3==1.34.0   # For AWS Textract (Cloud OCR)
+google-generativeai
+qdrant-client
+boto3   # For AWS Textract (Cloud OCR)
 
 # Utilities
-python-dotenv==1.0.0
-requests==2.31.0
+python-dotenv
+requests
 
-groq==0.11.0
-sentence-transformers==3.0.1
+groq
+sentence-transformers

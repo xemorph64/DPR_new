@@ -150,9 +150,9 @@ class FlexibleDocumentRAG:
             # Encode query using local SentenceTransformer
             vector = self.encoder.encode(query).tolist()
             
-            search_result = self.qdrant.search(
+            search_result = self.qdrant.query_points(
                 collection_name=self.collection_name,
-                query_vector=vector,
+                query=vector,
                 limit=limit,
                 query_filter=Filter(
                     must=[
@@ -163,8 +163,8 @@ class FlexibleDocumentRAG:
                     ]
                 )
             )
-            
-            return [hit.payload for hit in search_result]
+
+            return [hit.payload for hit in search_result.points]
         except Exception as e:
             logger.error(f"[RAG QUERY] Failed to query document {job_id}: {e}")
             return []

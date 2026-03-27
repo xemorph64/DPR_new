@@ -71,3 +71,11 @@ class ErrorResponse(BaseModel):
         default=None,
         description="Additional error details"
     )
+class ChatRequest(BaseModel):
+    """Schema for requesting a chat assistant query."""
+    job_id: str = Field(..., description="The ID of the document being discussed")
+    query: str = Field(..., description="The user's question about the document")
+
+class ChatResponse(BaseModel):
+    """Schema for chat assistant response."""
+    answer: str = Field(..., description="The generated answer from the AI assistant")

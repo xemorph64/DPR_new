@@ -33,10 +33,10 @@ def generate_dynamic_overview(job_id: str, extracted_text: str, images: List[Dic
         # We pass the first 15000 chars roughly to get the lay of the land
         initial_context = extracted_text[:15000]
         prompt_1 = (
-            "You are an expert infrastructure analyst reviewing a Detailed Project Report (DPR).\n"
+            "You are the Coordinator of a Ministry Review Board. We are assessing a Detailed Project Report (DPR).\n"
             f"Based on the following extracted text, provide a JSON object containing two fields:\n"
             '1. "executive_summary": A high-level executive summary of what this project is about, its scale, and its primary objectives (under 3 paragraphs).\n'
-            '2. "dynamic_topics": A list of 4 to 5 critical focus areas specifically tailored to this project based on the context (e.g., "Solar Panel Requirements", "Bridge Span Details", "Financial Estimates"). Do NOT formulate generic topics.\n\n'
+            '2. "dynamic_topics": A list of 3 to 4 specialized AI Agent Personas needed to review this document (e.g., "The Financial Auditor Agent", "The Legal Compliance Agent", "The Structural Engineer Agent"). Do NOT just list topics, list the agent titles.\n\n'
             "Respond ONLY with a valid JSON object containing those two fields.\n\n"
             f"Extracted Text:\n{initial_context}"
         )
@@ -50,15 +50,15 @@ def generate_dynamic_overview(job_id: str, extracted_text: str, images: List[Dic
             res1_json = json.loads(res1.choices[0].message.content.strip())
             exec_summary = res1_json.get("executive_summary", "Summary unavailable.")
             topics_to_explore = res1_json.get("dynamic_topics", [
-                "Project Finances and Budget",
-                "Technical Architecture",
-                "Environmental Impact",
-                "Potential Risks"
+                "The Financial Auditor Agent",
+                "The Technical Engineer Agent",
+                "The Environmental Compliance Agent",
+                "The Risk Assessment Agent"
             ])
         except Exception as e:
             logger.error(f"Failed to parse initial dynamic topics JSON: {e}")
             exec_summary = "Could not generate executive summary."
-            topics_to_explore = ["Key Aspects of the Project"]
+            topics_to_explore = ["The General Assessment Agent"]
              
         report.executive_summary = exec_summary
         
@@ -70,13 +70,13 @@ def generate_dynamic_overview(job_id: str, extracted_text: str, images: List[Dic
             context_text = "\n\n".join([chunk.get("text", "") for chunk in rag_chunks]) if rag_chunks else "No specific sections found."
             
             prompt_2 = (
-                f"You are analyzing a DPR. The user wants to know about: '{topic}'.\n"
-                f"Here are the most relevant excerpts retrieved from the document:\n{context_text}\n\n"
+                f"You are '{topic}' of the Ministry Review Board. The user wants your specialized assessment.\n"
+                f"Here are the most relevant excerpts retrieved from the document for you:\n{context_text}\n\n"
                 "Respond ONLY with a valid JSON object containing:\n"
-                '{"details": "A 2-3 sentence summary of this topic based on the excerpts.", '
+                '{"details": "Your agent narrative (2-3 sentences) evaluating this topic based ONLY on the excerpts.", '
                 '"risks": ["risk 1", "risk 2"], '
-                '"extracted_values": {"Metric Name (e.g. Total Estimated Cost)": "Value (e.g. ₹500 Million)"} }\n'
-                "For 'extracted_values', intelligently identify only the most critical quantifiable metrics (specific costs, capacities, exact numbers, dates) exactly related to this topic from the context."
+                '"extracted_values": {"Metric Name": "Value"} }\n'
+                "For 'extracted_values', intelligently identify only the most critical quantifiable metrics relevant to your specific persona from the context."
             )
             
             res2 = client.chat.completions.create(
@@ -107,14 +107,14 @@ def generate_dynamic_overview(job_id: str, extracted_text: str, images: List[Dic
         # Step 3: Final Synthesis (AI Assessment Report Card)
         from backend.schemas import EvaluationSummary
         
-        synthesis_context = f"Executive Summary:\n{report.executive_summary}\n\nDetailed Insights:\n"
+        synthesis_context = f"Executive Summary:\n{report.executive_summary}\n\nAgent Reports:\n"
         for ins in insights:
-            synthesis_context += f"Topic: {ins.topic}\nDetails: {ins.details}\nExtracted Metrics: {json.dumps(ins.extracted_values)}\nIdentified Risks: {json.dumps(ins.risks)}\n\n"
+            synthesis_context += f"Agent Persona: {ins.topic}\nAgent Analysis: {ins.details}\nExtracted Metrics: {json.dumps(ins.extracted_values)}\nIdentified Risks: {json.dumps(ins.risks)}\n\n"
             
         prompt_3 = (
-            "You are a Chief Infrastructure Assessor. Based ONLY on the following Executive Summary and Detailed Insights, "
+            "You are the 'Chief Assessor' of the Ministry Review Board. Based ONLY on the following Executive Summary and the specialized Agent Reports, "
             "generate a final, structured Evaluation Report Card for this Detailed Project Report (DPR). "
-            "Identify the most critical gaps, flag the highest severity risks across ALL topics, and provide actionable recommendations for the human assessor to follow up on.\n\n"
+            "Identify the most critical gaps, flag the highest severity risks across ALL agent reports, and provide actionable recommendations for the human assessor to follow up on.\n\n"
             "Respond ONLY with a valid JSON object containing:\n"
             '{"flagged_risks": ["Risk 1", "Risk 2"], "missing_sections": ["Missing data 1", "Missing data 2"], "recommendations": ["Recommendation 1", "Recommendation 2"]}\n\n'
             f"Data to evaluate:\n{synthesis_context}"
@@ -162,8 +162,8 @@ def generate_dynamic_overview(job_id: str, extracted_text: str, images: List[Dic
                 "and triggered the Groq analysis endpoint. However, there was an API error.\n\n"
             )
             report.insights = [
-                DynamicInsight(topic="Project Finances & ROI", details="The extraction and RAG pipeline queried for financial data successfully. (Mocked response due to API quota)", risks=["API Error"]),
-                DynamicInsight(topic="Technical Architecture", details="The extraction isolated technical metrics. (Mocked response due to API quota)", risks=["API Error"])
+                DynamicInsight(topic="The Financial Auditor Agent", details="The extraction and RAG pipeline queried for financial data successfully. (Mocked response due to API quota)", risks=["API Error"]),
+                DynamicInsight(topic="The Technical Engineer Agent", details="The extraction isolated technical metrics. (Mocked response due to API quota)", risks=["API Error"])
             ]
             report.status = "COMPLETED"
             return report

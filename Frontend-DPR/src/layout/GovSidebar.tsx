@@ -129,7 +129,7 @@ const GovSidebar: React.FC<GovSidebarProps> = ({ collapsed, onToggle, currentPag
           </ListSubheader>
         )}
         {renderMenuItem('dashboard', 'Dashboard', <DashboardIcon />)}
-        {userRole !== 'public' && renderMenuItem('upload', 'Upload DPR', <CloudUploadIcon />)}
+        {userRole !== 'public' && renderMenuItem('analysis', 'DPR Analysis', <AnalyticsIcon />)}
 
         {!collapsed && <Divider sx={{ my: 1, mx: 2, opacity: 0.6 }} />}
 
@@ -139,7 +139,6 @@ const GovSidebar: React.FC<GovSidebarProps> = ({ collapsed, onToggle, currentPag
             Analysis
           </ListSubheader>
         )}
-        {userRole !== 'public' && renderMenuItem('analysis', 'DPR Analysis', <AnalyticsIcon />)}
         {userRole !== 'public' && renderMenuItem('geo', 'Geospatial Verification', <MapIcon />)}
         {renderMenuItem('reports', 'Reports & Analytics', <AssessmentIcon />)}
         {userRole !== 'public' && renderMenuItem('docs', 'All Documents', <DescriptionIcon />)}

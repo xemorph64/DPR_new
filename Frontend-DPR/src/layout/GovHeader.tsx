@@ -62,7 +62,7 @@ const GovHeader: React.FC<GovHeaderProps> = ({ onNavigate }) => {
 
   return (
     <AppBar position="sticky" sx={{ bgcolor: '#0B3C5D', boxShadow: 3 }}>
-      <Container maxWidth="xl">
+      <Box sx={{ px: { xs: 2, md: 3 }, width: '100%', boxSizing: 'border-box' }}>
         <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 70 } }}>
 
           {/* Left: Emblem & Branding */}
@@ -246,7 +246,7 @@ const GovHeader: React.FC<GovHeaderProps> = ({ onNavigate }) => {
 
           </Stack>
         </Toolbar>
-      </Container>
+      </Box>
     </AppBar>
   );
 };
