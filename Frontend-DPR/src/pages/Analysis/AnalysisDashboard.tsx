@@ -221,12 +221,84 @@ export const AnalysisDashboard: React.FC = () => {
               Export Report PDF
             </Button>
           </Grid>
+          
+          {/* New Dynamic Project Summary Card */}
+          {report.evaluation_summary && (
+            <Grid item xs={12}>
+              <Card sx={{ borderRadius: 3, mb: 1, bgcolor: '#ffffff', border: '1px solid #dbe4ef' }}>
+                <CardContent sx={{ p: 4 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#0f2c59' }}>
+                      {report.evaluation_summary.project_name || "DPR Analysis Output"}
+                    </Typography>
+                    <Chip 
+                      label={report.evaluation_summary.approval_status || "Pending"} 
+                      color={
+                        report.evaluation_summary.approval_status?.toLowerCase().includes("approve") ? "success" : 
+                        report.evaluation_summary.approval_status?.toLowerCase().includes("reject") ? "error" : "warning"
+                      }
+                      sx={{ fontWeight: 'bold', borderRadius: 1 }}
+                    />
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Project Summary & Key Metrics
+                  </Typography>
+
+                  {report.evaluation_summary.key_project_metrics && report.evaluation_summary.key_project_metrics.length > 0 && (
+                    <Grid container spacing={4} sx={{ mb: 4 }}>
+                      {report.evaluation_summary.key_project_metrics.map((metric: any, i: number) => (
+                        <Grid item xs={12} sm={6} md={3} key={i}>
+                          <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                            {/* Simple icon based on index to mock screenshot */}
+                            {i === 0 ? '₹' : i === 1 ? '🏢' : i === 2 ? '📍' : '⚙️'} {metric.label}
+                          </Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+                            {metric.main_value}
+                          </Typography>
+                          {metric.sub_details && metric.sub_details.map((detail: string, j: number) => (
+                            <Typography key={j} variant="caption" display="block" color="text.secondary">
+                              {detail}
+                            </Typography>
+                          ))}
+                        </Grid>
+                      ))}
+                    </Grid>
+                  )}
+
+                  {report.evaluation_summary.slec_recommendation && (
+                    <Box sx={{ bgcolor: '#f4f6f8', p: 3, borderRadius: 2, mb: 4 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#0f2c59' }}>
+                        SLEC Recommendation
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {report.evaluation_summary.slec_recommendation}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {report.evaluation_summary.recommendations && report.evaluation_summary.recommendations.length > 0 && (
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2, color: '#0f2c59' }}>
+                        Key Actions Required
+                      </Typography>
+                      <ul style={{ paddingLeft: '20px', margin: 0, color: '#4b5563', fontSize: '0.875rem' }}>
+                        {report.evaluation_summary.recommendations.map((rec: string, i: number) => (
+                          <li key={i} style={{ marginBottom: '8px' }}>{rec}</li>
+                        ))}
+                      </ul>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+
           <Grid item xs={12}>
             <Card sx={{ borderRadius: 3, mb: 3, bgcolor: '#f4f6f8' }}>
               <CardContent>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', mb: 2 }}>
                   <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#0f2c59' }}>
-                    Executive Summary
+                    Agentic Analysis Insights
                   </Typography>
                   {reportQuality && (
                     <Chip
@@ -277,97 +349,91 @@ export const AnalysisDashboard: React.FC = () => {
             </Grid>
           )}
 
-          {report.evaluation_summary && (
+          {report.evaluation_summary && (report.evaluation_summary.flagged_risks.length > 0 || report.evaluation_summary.missing_sections.length > 0) && (
             <Grid item xs={12}>
-              <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>AI Assessment Report Card</Typography>
+              <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>Additional Flagged Items</Typography>
               <Grid container spacing={2}>
-                <Grid item xs={12} md={4}>
-                  <Card sx={{ height: '100%', borderRadius: 3, borderTop: '6px solid #d32f2f', bgcolor: '#fff5f5' }}>
-                    <CardContent>
-                      <Typography variant="h6" sx={{ color: '#d32f2f', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        🚨 Flagged Risks
-                      </Typography>
-                      <ul style={{ paddingLeft: '20px', margin: 0 }}>
-                        {report.evaluation_summary.flagged_risks.map((risk: string, i: number) => (
-                          <li key={i} style={{ marginBottom: '8px' }}><Typography variant="body2">{risk}</Typography></li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Card sx={{ height: '100%', borderRadius: 3, borderTop: '6px solid #ed6c02', bgcolor: '#fff8f0' }}>
-                    <CardContent>
-                      <Typography variant="h6" sx={{ color: '#ed6c02', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        ⚠️ Missing Context
-                      </Typography>
-                      <ul style={{ paddingLeft: '20px', margin: 0 }}>
-                        {report.evaluation_summary.missing_sections.map((item: string, i: number) => (
-                          <li key={i} style={{ marginBottom: '8px' }}><Typography variant="body2">{item}</Typography></li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Card sx={{ height: '100%', borderRadius: 3, borderTop: '6px solid #2e7d32', bgcolor: '#f0fdf4' }}>
-                    <CardContent>
-                      <Typography variant="h6" sx={{ color: '#2e7d32', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        💡 Recommendations
-                      </Typography>
-                      <ul style={{ paddingLeft: '20px', margin: 0 }}>
-                        {report.evaluation_summary.recommendations.map((rec: string, i: number) => (
-                          <li key={i} style={{ marginBottom: '8px' }}><Typography variant="body2">{rec}</Typography></li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                </Grid>
+                {report.evaluation_summary.flagged_risks.length > 0 && (
+                  <Grid item xs={12} md={6}>
+                    <Card sx={{ height: '100%', borderRadius: 3, borderTop: '6px solid #d32f2f', bgcolor: '#fff5f5' }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ color: '#d32f2f', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          🚨 Flagged Risks
+                        </Typography>
+                        <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                          {report.evaluation_summary.flagged_risks.map((risk: string, i: number) => (
+                            <li key={i} style={{ marginBottom: '8px' }}><Typography variant="body2">{risk}</Typography></li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                )}
+                {report.evaluation_summary.missing_sections.length > 0 && (
+                  <Grid item xs={12} md={6}>
+                    <Card sx={{ height: '100%', borderRadius: 3, borderTop: '6px solid #ed6c02', bgcolor: '#fff8f0' }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ color: '#ed6c02', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          ⚠️ Missing Context
+                        </Typography>
+                        <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                          {report.evaluation_summary.missing_sections.map((item: string, i: number) => (
+                            <li key={i} style={{ marginBottom: '8px' }}><Typography variant="body2">{item}</Typography></li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                )}
               </Grid>
             </Grid>
           )}
           
           <Grid item xs={12}>
-            <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>Dynamic AI Insights</Typography>
-            <Grid container spacing={2}>
-              {report.insights?.map((insight: any, i: number) => (
-                <Grid item xs={12} md={6} key={i}>
-                  <Card sx={{ height: '100%', borderRadius: 2, borderLeft: '4px solid #1976d2' }}>
-                    <CardContent>
-                      <Typography variant="h6" color="primary" gutterBottom>
-                        {insight.topic}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mb: 2 }}>
-                        {insight.details}
-                      </Typography>
-                      {insight.extracted_values && Object.keys(insight.extracted_values).length > 0 && (
-                        <Box sx={{ mb: 2, p: 2, bgcolor: '#f4f6f8', borderRadius: 2 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#0f2c59' }}>Key Data & Costs</Typography>
-                          <Grid container spacing={2}>
+            <Card sx={{ borderRadius: 3, bgcolor: '#f4f6f8' }}>
+              <CardContent sx={{ p: 4 }}>
+                <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold', color: '#0f2c59' }}>
+                    Agentic Analysis Specifics
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {report.insights?.map((insight: any, i: number) => (
+                    <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                      <Box sx={{ mt: 0.5, fontSize: '1.25rem' }}>
+                        {i % 4 === 0 ? '💡' : i % 4 === 1 ? '📊' : i % 4 === 2 ? '🎯' : '🌿'}
+                      </Box>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#1e293b' }}>
+                          {insight.topic}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#475569', mt: 0.5, mb: 1 }}>
+                          {insight.details}
+                        </Typography>
+                        
+                        {insight.extracted_values && Object.keys(insight.extracted_values).length > 0 && (
+                          <Grid container spacing={2} sx={{ mt: 1, p: 2, bgcolor: '#ffffff', borderRadius: 2, border: '1px solid #e2e8f0' }}>
                             {Object.entries(insight.extracted_values).map(([key, value], idx) => (
-                              <Grid item xs={6} key={idx}>
+                              <Grid item xs={12} sm={6} md={3} key={idx}>
                                 <Typography variant="caption" color="text.secondary" display="block">{key}</Typography>
-                                <Typography variant="body1" fontWeight="bold">{String(value)}</Typography>
+                                <Typography variant="body2" fontWeight="bold">{String(value)}</Typography>
                               </Grid>
                             ))}
                           </Grid>
-                        </Box>
-                      )}
-                      {insight.risks?.length > 0 && (
-                        <Box>
-                          <Typography variant="subtitle2" color="error">Identified Risks:</Typography>
-                          <ul>
+                        )}
+                        {insight.risks?.length > 0 && (
+                          <Box sx={{ mt: 1 }}>
                             {insight.risks.map((risk: string, j: number) => (
-                              <li key={j}><Typography variant="body2" color="error">{risk}</Typography></li>
+                              <Typography key={j} variant="caption" sx={{ color: '#d32f2f', display: 'block' }}>
+                                • {risk}
+                              </Typography>
                             ))}
-                          </ul>
-                        </Box>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+                          </Box>
+                        )}
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
           </Grid>
 
           {report.extracted_images?.length > 0 && (

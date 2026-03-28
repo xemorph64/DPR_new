@@ -23,6 +23,22 @@ def generate_dynamic_overview(job_id: str, extracted_text: str, images: List[Dic
         report.insights = [
             DynamicInsight(topic="Mock Topic", details="This is a mock insight.", risks=["Mock risk"])
         ]
+        from backend.schemas import EvaluationSummary
+        report.evaluation_summary = EvaluationSummary(
+            project_name="Mock Infrastructure Development Project",
+            approval_status="Approve",
+            slec_recommendation="Based on comprehensive evaluation, SLEC approves the project subject to compliance with environmental corrective actions.",
+            key_project_metrics=[
+                {"label": "Total Project Cost", "main_value": "₹25,00,00,000.00", "sub_details": ["MDoNER Share: ₹22,50,00,000", "State Share: ₹2,50,00,000"]},
+                {"label": "Implementing Agency", "main_value": "State Health Department", "sub_details": []},
+                {"label": "Location", "main_value": "Manipur, Imphal East", "sub_details": []},
+                {"label": "Evaluation Scores", "main_value": "82.8/100", "sub_details": ["Technical: 82/100", "Financial: 84/100"]}
+            ],
+            flagged_risks=["API Error: Using Mock Data"],
+            missing_sections=[],
+            recommendations=["Re-run with valid GROQ_API_KEY", "Check environmental compliance"]
+        )
+        report.status = "COMPLETED"
         return report
 
     try:
@@ -114,9 +130,22 @@ def generate_dynamic_overview(job_id: str, extracted_text: str, images: List[Dic
         prompt_3 = (
             "You are the 'Chief Assessor' of the Ministry Review Board. Based ONLY on the following Executive Summary and the specialized Agent Reports, "
             "generate a final, structured Evaluation Report Card for this Detailed Project Report (DPR). "
-            "Identify the most critical gaps, flag the highest severity risks across ALL agent reports, and provide actionable recommendations for the human assessor to follow up on.\n\n"
-            "Respond ONLY with a valid JSON object containing:\n"
-            '{"flagged_risks": ["Risk 1", "Risk 2"], "missing_sections": ["Missing data 1", "Missing data 2"], "recommendations": ["Recommendation 1", "Recommendation 2"]}\n\n'
+            "Identify the explicit or inferred project name, determine an overall approval status ('Approve', 'Reject', or 'Revise'), and a formal narrative recommendation paragraph. "
+            "Determine the 4-5 most critically important project metrics (e.g., Total Project Cost, Implementing Agency, Location, Evaluation Scores) to display in a UI dashboard, "
+            "formatting currencies neatly (e.g., ₹25,00,00,000.00). Also identify the most critical gaps, flag the highest severity risks, and provide actionable recommendations.\n\n"
+            "Respond ONLY with a valid JSON object matching this exact structure:\n"
+            '{\n'
+            '  "project_name": "Name of the Project",\n'
+            '  "approval_status": "Approve",\n'
+            '  "slec_recommendation": "Narrative paragraph detailing the recommendation...",\n'
+            '  "key_project_metrics": [\n'
+            '    {"label": "Total Project Cost", "main_value": "₹25,00,00,000.00", "sub_details": ["MDoNER Share: ₹22,50,00,000", "State Share: ₹2,50,00,000"]},\n'
+            '    {"label": "Implementing Agency", "main_value": "Agency Name", "sub_details": []}\n'
+            '  ],\n'
+            '  "flagged_risks": ["Risk 1", "Risk 2"],\n'
+            '  "missing_sections": ["Missing data 1"],\n'
+            '  "recommendations": ["Recommendation 1"]\n'
+            '}\n\n'
             f"Data to evaluate:\n{synthesis_context}"
         )
         
@@ -134,14 +163,37 @@ def generate_dynamic_overview(job_id: str, extracted_text: str, images: List[Dic
                 raw_eval_json = raw_eval_json[3:-3].strip()
                 
             parsed_eval = json.loads(raw_eval_json)
+            
+            raw_metrics = parsed_eval.get("key_project_metrics", [])
+            key_metrics = []
+            if isinstance(raw_metrics, list):
+                for rm in raw_metrics:
+                    if isinstance(rm, dict):
+                        key_metrics.append({
+                            "label": rm.get("label", "Unknown Metric"),
+                            "main_value": rm.get("main_value", "Unknown Value"),
+                            "sub_details": rm.get("sub_details", [])
+                        })
+
             report.evaluation_summary = EvaluationSummary(
+                project_name=parsed_eval.get("project_name", "Unknown Project"),
+                approval_status=parsed_eval.get("approval_status", "Pending Review"),
+                slec_recommendation=parsed_eval.get("slec_recommendation", "No specific recommendation provided."),
+                key_project_metrics=key_metrics,
                 flagged_risks=parsed_eval.get("flagged_risks", []),
                 missing_sections=parsed_eval.get("missing_sections", []),
                 recommendations=parsed_eval.get("recommendations", [])
             )
         except Exception as e:
             logger.error(f"Failed to generate evaluation summary: {e}")
-            report.evaluation_summary = EvaluationSummary(flagged_risks=["Could not generate"], missing_sections=["Could not generate"], recommendations=["Could not generate"])
+            report.evaluation_summary = EvaluationSummary(
+                project_name="Could not parse",
+                approval_status="Error",
+                key_project_metrics=[],
+                flagged_risks=["Could not generate"], 
+                missing_sections=["Could not generate"], 
+                recommendations=["Could not generate"]
+            )
 
         # Step 4: Attach Images
         image_list = []
@@ -165,6 +217,21 @@ def generate_dynamic_overview(job_id: str, extracted_text: str, images: List[Dic
                 DynamicInsight(topic="The Financial Auditor Agent", details="The extraction and RAG pipeline queried for financial data successfully. (Mocked response due to API quota)", risks=["API Error"]),
                 DynamicInsight(topic="The Technical Engineer Agent", details="The extraction isolated technical metrics. (Mocked response due to API quota)", risks=["API Error"])
             ]
+            from backend.schemas import EvaluationSummary
+            report.evaluation_summary = EvaluationSummary(
+                project_name="Mock Infrastructure Development Project",
+                approval_status="Approve",
+                slec_recommendation="Based on comprehensive evaluation, SLEC approves the project subject to compliance with environmental corrective actions.",
+                key_project_metrics=[
+                    {"label": "Total Project Cost", "main_value": "₹25,00,00,000.00", "sub_details": ["MDoNER Share: ₹22,50,00,000", "State Share: ₹2,50,00,000"]},
+                    {"label": "Implementing Agency", "main_value": "State Health Department", "sub_details": []},
+                    {"label": "Location", "main_value": "Manipur, Imphal East", "sub_details": []},
+                    {"label": "Evaluation Scores", "main_value": "82.8/100", "sub_details": ["Technical: 82/100", "Financial: 84/100"]}
+                ],
+                flagged_risks=["API Error: Using Mock Data"],
+                missing_sections=[],
+                recommendations=["Re-run with valid GROQ_API_KEY", "Check environmental compliance"]
+            )
             report.status = "COMPLETED"
             return report
             
