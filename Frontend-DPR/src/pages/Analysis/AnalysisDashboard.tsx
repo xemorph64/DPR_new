@@ -1,12 +1,50 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  Box, Container, Typography, Grid, Card, CardContent, Button, Alert, CircularProgress, Chip, LinearProgress
+  Box, Container, Typography, Grid, Card, CardContent, Button, Alert, CircularProgress, Chip
 } from '@mui/material';
 import { CloudUpload as UploadIcon, Analytics as AnalyticsIcon } from '@mui/icons-material';
 import { useDropzone } from 'react-dropzone';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = 'http://localhost:8000';
+
+const buildReportQuality = (report: any) => {
+  const insights = Array.isArray(report?.insights) ? report.insights : [];
+  const evaluationSummary = report?.evaluation_summary;
+  const extractedImages = Array.isArray(report?.extracted_images) ? report.extracted_images : [];
+
+  const insightEvidenceCount = insights.filter((insight: any) => {
+    const hasDetails = typeof insight?.details === 'string' && insight.details.trim().length > 0;
+    const hasSupport = Boolean(insight?.extracted_values && Object.keys(insight.extracted_values).length > 0) || (Array.isArray(insight?.risks) && insight.risks.length > 0);
+    return hasDetails && hasSupport;
+  }).length;
+
+  const evaluationPieces = [
+    evaluationSummary?.flagged_risks?.length || 0,
+    evaluationSummary?.missing_sections?.length || 0,
+    evaluationSummary?.recommendations?.length || 0,
+  ].reduce((total, value) => total + (value > 0 ? 1 : 0), 0);
+
+  const evidenceSignals = [
+    report?.executive_summary ? 1 : 0,
+    insights.length > 0 ? 1 : 0,
+    insightEvidenceCount > 0 ? 1 : 0,
+    evaluationSummary ? 1 : 0,
+    extractedImages.length > 0 ? 1 : 0,
+  ];
+
+  const score = Math.round((evidenceSignals.reduce((total, value) => total + value, 0) / evidenceSignals.length) * 100);
+
+  return {
+    score,
+    insightCount: insights.length,
+    insightEvidenceCount,
+    evaluationPieces,
+    extractedImagesCount: extractedImages.length,
+    hasEvaluationSummary: Boolean(evaluationSummary),
+    qualityLabel: score >= 80 ? 'Strong' : score >= 60 ? 'Moderate' : 'Review needed',
+  };
+};
 
 export const AnalysisDashboard: React.FC = () => {
   const location = useLocation();
@@ -17,6 +55,7 @@ export const AnalysisDashboard: React.FC = () => {
   const [jobId, setJobId] = useState<string | null>(null);
   const [report, setReport] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const reportQuality = report ? buildReportQuality(report) : null;
 
   // Load a report passed from the Reports history page
   useEffect(() => {
@@ -185,15 +224,58 @@ export const AnalysisDashboard: React.FC = () => {
           <Grid item xs={12}>
             <Card sx={{ borderRadius: 3, mb: 3, bgcolor: '#f4f6f8' }}>
               <CardContent>
-                <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold', color: '#0f2c59' }}>
-                  Executive Summary
-                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#0f2c59' }}>
+                    Executive Summary
+                  </Typography>
+                  {reportQuality && (
+                    <Chip
+                      label={`Quality ${reportQuality.score}/100 · ${reportQuality.qualityLabel}`}
+                      color={reportQuality.score >= 80 ? 'success' : reportQuality.score >= 60 ? 'warning' : 'error'}
+                      variant="outlined"
+                    />
+                  )}
+                </Box>
                 <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                   {report.executive_summary}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
+
+          {reportQuality && (
+            <Grid item xs={12}>
+              <Card sx={{ borderRadius: 3, border: '1px solid #dbe4ef', bgcolor: '#ffffff' }}>
+                <CardContent>
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: '#0f2c59' }}>
+                    Report Quality Snapshot
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Chip label={`Insights: ${reportQuality.insightCount}`} color="primary" variant="outlined" sx={{ width: '100%' }} />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Chip label={`Evidence-backed: ${reportQuality.insightEvidenceCount}`} color="success" variant="outlined" sx={{ width: '100%' }} />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Chip label={`Evaluation blocks: ${reportQuality.evaluationPieces}/3`} color="warning" variant="outlined" sx={{ width: '100%' }} />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Chip label={`Images: ${reportQuality.extractedImagesCount}`} color="info" variant="outlined" sx={{ width: '100%' }} />
+                    </Grid>
+                  </Grid>
+                  <Box sx={{ mt: 2, p: 1.5, borderRadius: 2, bgcolor: '#f8fbff', border: '1px solid #e3eef9' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#0f2c59', display: 'block', mb: 0.5 }}>
+                      Score legend
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.6 }}>
+                      80-100 = strong evidence coverage and structured output. 60-79 = usable but partial support. Below 60 = review needed before relying on the report.
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
 
           {report.evaluation_summary && (
             <Grid item xs={12}>

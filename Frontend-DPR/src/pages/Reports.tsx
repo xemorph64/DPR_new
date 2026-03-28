@@ -5,6 +5,22 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 
 import { useNavigate } from 'react-router-dom';
 
+const getReportQualityScore = (report: any) => {
+    const insights = Array.isArray(report?.insights) ? report.insights : [];
+    const evaluationSummary = report?.evaluation_summary;
+    const extractedImages = Array.isArray(report?.extracted_images) ? report.extracted_images : [];
+
+    const evidenceSignals = [
+        report?.executive_summary ? 1 : 0,
+        insights.length > 0 ? 1 : 0,
+        insights.some((insight: any) => Boolean(insight?.extracted_values && Object.keys(insight.extracted_values).length > 0)) ? 1 : 0,
+        Boolean(evaluationSummary) ? 1 : 0,
+        extractedImages.length > 0 ? 1 : 0,
+    ];
+
+    return Math.round((evidenceSignals.reduce((total, value) => total + value, 0) / evidenceSignals.length) * 100);
+};
+
 const Reports: React.FC = () => {
     const navigate = useNavigate();
     const [reports, setReports] = useState<any[]>([]);
@@ -62,6 +78,10 @@ const Reports: React.FC = () => {
                 <Grid container spacing={3}>
                     {reports.map((report, idx) => (
                         <Grid item xs={12} md={6} lg={4} key={idx}>
+                            {(() => {
+                                const qualityScore = getReportQualityScore(report);
+
+                                return (
                             <Card sx={{ borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.05)', height: '100%', display: 'flex', flexDirection: 'column' }}>
                                 <CardContent sx={{ flexGrow: 1 }}>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -73,6 +93,18 @@ const Reports: React.FC = () => {
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                         {report.executive_summary}
+                                    </Typography>
+
+                                    <Chip
+                                        label={`Quality ${qualityScore}/100`}
+                                        color={qualityScore >= 80 ? 'success' : qualityScore >= 60 ? 'warning' : 'error'}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{ mb: 2 }}
+                                    />
+
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2, lineHeight: 1.5 }}>
+                                        80-100 strong, 60-79 partial, below 60 needs review.
                                     </Typography>
 
                                     {report.evaluation_summary && (
@@ -92,6 +124,8 @@ const Reports: React.FC = () => {
                                     </Button>
                                 </Box>
                             </Card>
+                                );
+                            })()}
                         </Grid>
                     ))}
                 </Grid>
